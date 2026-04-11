@@ -11,6 +11,18 @@ const timeStr = computed(() => {
   const d = new Date(props.message.timestamp)
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 })
+
+function isImage(type: string): boolean {
+  return type.startsWith('image/')
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
+
+const hasAttachments = computed(() => (props.message.attachments?.length ?? 0) > 0)
 </script>
 
 <template>
@@ -27,6 +39,25 @@ const timeStr = computed(() => {
         <img v-if="message.role === 'assistant'" src="/assets/logo.png" alt="Hermes" class="msg-avatar" />
         <div class="msg-content" :class="message.role">
           <div class="message-bubble" :class="{ system: isSystem }">
+            <div v-if="hasAttachments" class="msg-attachments">
+              <div
+                v-for="att in message.attachments"
+                :key="att.id"
+                class="msg-attachment"
+                :class="{ image: isImage(att.type) }"
+              >
+                <template v-if="isImage(att.type) && att.url">
+                  <img :src="att.url" :alt="att.name" class="msg-attachment-thumb" />
+                </template>
+                <template v-else>
+                  <div class="msg-attachment-file">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <span class="att-name">{{ att.name }}</span>
+                    <span class="att-size">{{ formatSize(att.size) }}</span>
+                  </div>
+                </template>
+              </div>
+            </div>
             <MarkdownRenderer v-if="message.content" :content="message.content" />
             <span v-if="message.isStreaming" class="streaming-cursor"></span>
             <div v-if="message.isStreaming && !message.content" class="streaming-dots">
@@ -121,6 +152,53 @@ const timeStr = computed(() => {
   font-size: 14px;
   line-height: 1.65;
   word-break: break-word;
+}
+
+.msg-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.msg-attachment {
+  border-radius: $radius-sm;
+  overflow: hidden;
+  background-color: rgba(0, 0, 0, 0.04);
+  border: 1px solid $border-light;
+
+  &.image {
+    max-width: 200px;
+  }
+}
+
+.msg-attachment-thumb {
+  display: block;
+  max-width: 200px;
+  max-height: 160px;
+  object-fit: contain;
+}
+
+.msg-attachment-file {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: $text-secondary;
+
+  .att-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+  }
+
+  .att-size {
+    color: $text-muted;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
 }
 
 .message-time {

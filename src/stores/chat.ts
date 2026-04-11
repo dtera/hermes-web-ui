@@ -3,6 +3,15 @@ import { ref } from 'vue'
 import { startRun, streamRunEvents, type ChatMessage, type RunEvent } from '@/api/chat'
 import { useAppStore } from './app'
 
+export interface Attachment {
+  id: string
+  name: string
+  type: string
+  size: number
+  url: string
+  file?: File
+}
+
 export interface Message {
   id: string
   role: 'user' | 'assistant' | 'system' | 'tool'
@@ -12,6 +21,7 @@ export interface Message {
   toolPreview?: string
   toolStatus?: 'running' | 'done' | 'error'
   isStreaming?: boolean
+  attachments?: Attachment[]
 }
 
 interface Session {
@@ -24,6 +34,18 @@ interface Session {
 
 function uid(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+}
+
+async function uploadFiles(attachments: Attachment[]): Promise<{ name: string; path: string }[]> {
+  if (attachments.length === 0) return []
+  const formData = new FormData()
+  for (const att of attachments) {
+    if (att.file) formData.append('file', att.file, att.name)
+  }
+  const res = await fetch('/__upload', { method: 'POST', body: formData })
+  if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
+  const data = await res.json() as { files: { name: string; path: string }[] }
+  return data.files
 }
 
 const SESSIONS_KEY = 'hermes_chat_sessions'
@@ -97,15 +119,25 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
+  function stripNonSerializable(msgs: Message[]): Message[] {
+    return msgs.map(m => ({
+      ...m,
+      attachments: m.attachments?.map(a => ({ ...a, file: undefined, url: '' })),
+    }))
+  }
+
   function persistMessages() {
     if (!activeSession.value || !appStore.sessionPersistence) return
-    activeSession.value.messages = [...messages.value]
+    activeSession.value.messages = stripNonSerializable(messages.value)
     activeSession.value.updatedAt = Date.now()
 
     if (activeSession.value.title === 'New Chat') {
       const firstUser = messages.value.find(m => m.role === 'user')
       if (firstUser) {
-        activeSession.value.title = firstUser.content.slice(0, 40) + (firstUser.content.length > 40 ? '...' : '')
+        const title = firstUser.attachments?.length
+          ? firstUser.attachments.map(a => a.name).join(', ')
+          : firstUser.content
+        activeSession.value.title = title.slice(0, 40) + (title.length > 40 ? '...' : '')
       }
     }
 
@@ -125,8 +157,8 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  async function sendMessage(content: string) {
-    if (!content.trim() || isStreaming.value) return
+  async function sendMessage(content: string, attachments?: Attachment[]) {
+    if ((!content.trim() && !(attachments && attachments.length > 0)) || isStreaming.value) return
 
     if (!activeSession.value) {
       const session = createSession()
@@ -138,6 +170,7 @@ export const useChatStore = defineStore('chat', () => {
       role: 'user',
       content: content.trim(),
       timestamp: Date.now(),
+      attachments: attachments && attachments.length > 0 ? attachments : undefined,
     }
     addMessage(userMsg)
     persistMessages()
@@ -150,8 +183,16 @@ export const useChatStore = defineStore('chat', () => {
         .filter(m => (m.role === 'user' || m.role === 'assistant') && m.content.trim())
         .map(m => ({ role: m.role as 'user' | 'assistant' | 'system', content: m.content }))
 
+      // Upload attachments and build input with file paths
+      let inputText = content.trim()
+      if (attachments && attachments.length > 0) {
+        const uploaded = await uploadFiles(attachments)
+        const pathParts = uploaded.map(f => `[File: ${f.name}](${f.path})`)
+        inputText = inputText ? inputText + '\n\n' + pathParts.join('\n') : pathParts.join('\n')
+      }
+
       const run = await startRun({
-        input: content.trim(),
+        input: inputText,
         conversation_history: history,
         session_id: activeSession.value?.id,
       })

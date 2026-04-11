@@ -1,23 +1,23 @@
-# Hermes UI
+# Hermes Web UI
 
-Hermes Agent 的 Web 管理面板，用于对话交互和定时任务管理。
+Web dashboard for [Hermes Agent](https://github.com/EKKOLearnAI/hermes-agent) — chat interaction and scheduled job management.
 
-## 技术栈
+## Tech Stack
 
 - **Vue 3** — Composition API + `<script setup>`
 - **TypeScript**
-- **Vite** — 构建工具
-- **Naive UI** — 组件库
-- **Pinia** — 状态管理
-- **Vue Router** — 路由（Hash 模式）
-- **SCSS** — 样式预处理
-- **markdown-it** + **highlight.js** — Markdown 渲染与代码高亮
+- **Vite** — Build tool
+- **Naive UI** — Component library
+- **Pinia** — State management
+- **Vue Router** — Routing (Hash mode)
+- **SCSS** — Style preprocessor
+- **markdown-it** + **highlight.js** — Markdown rendering and code highlighting
 
-## 快速开始
+## Getting Started
 
-### 1. 配置 API Server
+### 1. Configure API Server
 
-编辑 `~/.hermes/config.yaml`，启用 API Server：
+Edit `~/.hermes/config.yaml` and enable the API Server:
 
 ```yaml
 platforms:
@@ -29,115 +29,116 @@ platforms:
     cors_origins: "*"
 ```
 
-重启 Gateway 使配置生效：
+Restart the Gateway to apply changes:
 
 ```bash
 hermes gateway restart
 ```
 
-### 2. 安装并启动
+### 2. Install and Run
 
 ```bash
-# 全局安装
+# Global install
 npm install -g hermes-web-ui
 
-# 启动 Web 面板（默认 http://localhost:8648）
+# Start the web dashboard (default http://localhost:8648)
 hermes-web-ui start
 ```
 
-### 开发模式
+### Development Mode
 
 ```bash
-# 克隆项目后
+git clone https://github.com/EKKOLearnAI/hermes-web-ui.git
+cd hermes-web-ui
 npm install
 npm run dev
 ```
 
-## 项目结构
+## Project Structure
 
 ```
 src/
 ├── api/
-│   ├── client.ts              # HTTP 请求封装（fetch + Bearer Auth）
-│   ├── chat.ts                # 对话 API（startRun + SSE 事件流）
-│   ├── jobs.ts                # 定时任务 CRUD
-│   └── system.ts              # 健康检查、模型列表
+│   ├── client.ts              # HTTP client (fetch + Bearer Auth)
+│   ├── chat.ts                # Chat API (startRun + SSE event stream)
+│   ├── jobs.ts                # Scheduled job CRUD
+│   └── system.ts              # Health check, model list
 ├── stores/
-│   ├── app.ts                 # 全局状态（连接状态、版本、模型）
-│   ├── chat.ts                # 对话状态（消息、会话、流式输出）
-│   └── jobs.ts                # 任务状态（列表、CRUD 操作）
+│   ├── app.ts                 # Global state (connection, version, models)
+│   ├── chat.ts                # Chat state (messages, sessions, streaming)
+│   └── jobs.ts                # Job state (list, CRUD operations)
 ├── components/
 │   ├── layout/
-│   │   └── AppSidebar.vue     # 侧边栏导航
+│   │   └── AppSidebar.vue     # Sidebar navigation
 │   ├── chat/
-│   │   ├── ChatPanel.vue      # 对话面板（会话列表 + 聊天区域）
-│   │   ├── MessageList.vue    # 消息列表（自动滚动、加载动画）
-│   │   ├── MessageItem.vue    # 单条消息（用户/AI/工具/系统）
-│   │   ├── ChatInput.vue      # 输入框（Ctrl+Enter 发送）
-│   │   └── MarkdownRenderer.vue # Markdown 渲染（代码高亮、复制）
+│   │   ├── ChatPanel.vue      # Chat panel (session list + chat area)
+│   │   ├── MessageList.vue    # Message list (auto-scroll, loading animation)
+│   │   ├── MessageItem.vue    # Single message (user/AI/tool/system)
+│   │   ├── ChatInput.vue      # Input box (Enter to send, Shift+Enter for newline)
+│   │   └── MarkdownRenderer.vue # Markdown renderer (code highlighting, copy)
 │   └── jobs/
-│       ├── JobsPanel.vue      # 任务面板
-│       ├── JobCard.vue        # 任务卡片
-│       └── JobFormModal.vue   # 创建/编辑任务弹窗
+│       ├── JobsPanel.vue      # Job panel
+│       ├── JobCard.vue        # Job card
+│       └── JobFormModal.vue   # Create/edit job modal
 ├── views/
-│   ├── ChatView.vue           # 对话页
-│   └── JobsView.vue           # 任务页
+│   ├── ChatView.vue           # Chat page
+│   └── JobsView.vue           # Jobs page
 ├── router/
-│   └── index.ts               # 路由配置
+│   └── index.ts               # Router configuration
 ├── styles/
-│   ├── variables.scss         # SCSS 设计变量
-│   ├── global.scss            # 全局样式
-│   └── theme.ts               # Naive UI 主题覆盖
+│   ├── variables.scss         # SCSS design tokens
+│   ├── global.scss            # Global styles
+│   └── theme.ts               # Naive UI theme overrides
 ├── composables/
-│   └── useKeyboard.ts         # 键盘快捷键
-└── main.ts                    # 应用入口
+│   └── useKeyboard.ts         # Keyboard shortcuts
+└── main.ts                    # App entry point
 ```
 
-## 功能特性
+## Features
 
-### 对话（Chat）
+### Chat
 
-- 基于 `/v1/runs` + `/v1/runs/{id}/events` 的异步 Run + SSE 事件流
-- 实时流式输出，工具调用进度可视化
-- 多会话管理，会话历史持久化到 localStorage
-- Markdown 渲染，代码块语法高亮与一键复制
+- Async Run + SSE event stream via `/v1/runs` + `/v1/runs/{id}/events`
+- Real-time streaming output with tool call progress visualization
+- Multi-session management with localStorage persistence
+- Markdown rendering with syntax highlighting and one-click code copy
 
-### 定时任务（Jobs）
+### Scheduled Jobs
 
-- 任务列表查看（含暂停/禁用任务）
-- 创建、编辑、删除任务
-- 暂停/恢复任务
-- 立即触发任务执行
-- Cron 表达式快速预设
+- Job list view (including paused/disabled jobs)
+- Create, edit, and delete jobs
+- Pause and resume jobs
+- Trigger immediate job execution
+- Cron expression quick presets
 
-### 其他
+### Other
 
-- 连接状态实时检测（30s 轮询）
-- 纯黑白主题
-- 键盘快捷键支持
+- Real-time connection status monitoring (30s polling)
+- Minimalist black-and-white theme
+- Keyboard shortcuts (Ctrl+N for new chat, Ctrl+J for jobs)
 
 ---
 
-## API 接口文档
+## API Reference
 
 Base URL: `http://127.0.0.1:8642`
 
-### 认证
+### Authentication
 
-除 `/health` 外，所有接口支持 Bearer Token 认证（如果服务端配置了 `key`）：
+All endpoints except `/health` support Bearer Token authentication (if `key` is configured on the server):
 
 ```
 Authorization: Bearer <your-api-key>
 ```
 
-未配置 key 时所有请求放行。
+When no key is configured, all requests are allowed without authentication.
 
-### 通用错误格式
+### Error Format
 
 ```json
 {
   "error": {
-    "message": "错误描述",
+    "message": "Error description",
     "type": "invalid_request_error",
     "param": null,
     "code": "invalid_api_key"
@@ -145,23 +146,23 @@ Authorization: Bearer <your-api-key>
 }
 ```
 
-| 状态码 | 说明 |
-|--------|------|
-| 200 | 成功 |
-| 400 | 请求参数错误 |
-| 401 | API Key 无效 |
-| 404 | 资源不存在 |
-| 413 | 请求体过大（上限 1MB） |
-| 429 | 并发超限（最大 10 个 Run） |
-| 500 | 服务器内部错误 |
+| Status Code | Description |
+|-------------|-------------|
+| 200 | Success |
+| 400 | Bad request |
+| 401 | Invalid API key |
+| 404 | Not found |
+| 413 | Request body too large (max 1MB) |
+| 429 | Concurrent run limit exceeded (max 10 runs) |
+| 500 | Internal server error |
 
 ---
 
-### 1. 健康检查
+### 1. Health Check
 
-**GET** `/health` 或 `/v1/health`
+**GET** `/health` or `/v1/health`
 
-无需认证。
+No authentication required.
 
 ```json
 {"status": "ok", "platform": "hermes-agent"}
@@ -169,7 +170,7 @@ Authorization: Bearer <your-api-key>
 
 ---
 
-### 2. 模型列表
+### 2. Model List
 
 **GET** `/v1/models`
 
@@ -189,56 +190,56 @@ Authorization: Bearer <your-api-key>
 
 ---
 
-### 3. Chat Completions（OpenAI 兼容）
+### 3. Chat Completions (OpenAI Compatible)
 
 **POST** `/v1/chat/completions`
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| messages | array | Y | 消息数组，格式同 OpenAI |
-| stream | boolean | N | 是否流式返回，默认 false |
-| model | string | N | 模型名，默认 "hermes-agent" |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| messages | array | Y | Message array, same format as OpenAI |
+| stream | boolean | N | Enable streaming, default false |
+| model | string | N | Model name, default "hermes-agent" |
 
-可选 Header: `X-Hermes-Session-Id` 指定会话 ID。
+Optional header: `X-Hermes-Session-Id` to specify a session ID.
 
-**stream=false 响应：**
+**stream=false response:**
 ```json
 {
   "id": "chatcmpl-xxxxx",
   "object": "chat.completion",
   "created": 1744348800,
   "model": "hermes-agent",
-  "choices": [{"index": 0, "message": {"role": "assistant", "content": "回复内容"}, "finish_reason": "stop"}],
+  "choices": [{"index": 0, "message": {"role": "assistant", "content": "Response content"}, "finish_reason": "stop"}],
   "usage": {"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150}
 }
 ```
 
-**stream=true 响应：** SSE 流（`Content-Type: text/event-stream`）
+**stream=true response:** SSE stream (`Content-Type: text/event-stream`)
 ```
-data: {"id":"chatcmpl-xxx","choices":[{"delta":{"content":"你"},"index":0}]}
+data: {"id":"chatcmpl-xxx","choices":[{"delta":{"content":"Hello"},"index":0}]}
 data: [DONE]
 ```
 
 ---
 
-### 4. Responses（有状态链式对话）
+### 4. Responses (Stateful Chained Conversations)
 
 **POST** `/v1/responses`
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| input | string / array | Y | 用户输入 |
-| instructions | string | N | 系统指令 |
-| previous_response_id | string | N | 链式对话的上一次响应 ID |
-| conversation | string | N | 会话名称，自动链式到最新响应 |
-| conversation_history | array | N | 显式传入对话历史 |
-| store | boolean | N | 是否存储响应，默认 true |
-| truncation | string | N | 设为 "auto" 自动截断历史到 100 条 |
-| model | string | N | 模型名 |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| input | string / array | Y | User input |
+| instructions | string | N | System instructions |
+| previous_response_id | string | N | Previous response ID for chained conversation |
+| conversation | string | N | Conversation name, auto-chains to latest response |
+| conversation_history | array | N | Explicit conversation history |
+| store | boolean | N | Whether to store the response, default true |
+| truncation | string | N | Set to "auto" to truncate history to 100 messages |
+| model | string | N | Model name |
 
-> `conversation` 和 `previous_response_id` 互斥。
+> `conversation` and `previous_response_id` are mutually exclusive.
 
-可选 Header: `Idempotency-Key` 幂等键。
+Optional header: `Idempotency-Key` for idempotency.
 
 ```json
 {
@@ -246,18 +247,18 @@ data: [DONE]
   "object": "response",
   "status": "completed",
   "created_at": 1744348800,
-  "output": [{"type": "message", "role": "assistant", "content": "回复内容"}],
+  "output": [{"type": "message", "role": "assistant", "content": "Response content"}],
   "usage": {"input_tokens": 100, "output_tokens": 50, "total_tokens": 150}
 }
 ```
 
 ---
 
-### 5. 获取 / 删除存储的响应
+### 5. Get / Delete Stored Responses
 
-**GET** `/v1/responses/{response_id}` — 获取存储的响应
+**GET** `/v1/responses/{response_id}` — Get a stored response
 
-**DELETE** `/v1/responses/{response_id}` — 删除存储的响应
+**DELETE** `/v1/responses/{response_id}` — Delete a stored response
 
 ```json
 {"id": "resp_xxx", "object": "response", "deleted": true}
@@ -265,17 +266,17 @@ data: [DONE]
 
 ---
 
-### 6. 启动异步 Run
+### 6. Start Async Run
 
 **POST** `/v1/runs`
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| input | string / array | Y | 用户输入 |
-| instructions | string | N | 系统指令 |
-| previous_response_id | string | N | 链式对话 ID |
-| conversation_history | array | N | 对话历史 |
-| session_id | string | N | 会话 ID，默认使用 run_id |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| input | string / array | Y | User input |
+| instructions | string | N | System instructions |
+| previous_response_id | string | N | Chained conversation ID |
+| conversation_history | array | N | Conversation history |
+| session_id | string | N | Session ID, defaults to run_id |
 
 ```json
 {"run_id": "run_xxx", "status": "started"}
@@ -283,36 +284,36 @@ data: [DONE]
 
 ---
 
-### 7. SSE 事件流
+### 7. SSE Event Stream
 
 **GET** `/v1/runs/{run_id}/events`
 
 `Content-Type: text/event-stream`
 
-**事件类型：**
+**Event types:**
 
-| 事件 | 说明 |
-|------|------|
-| `run.started` | Run 开始 |
-| `message.delta` | 消息内容片段（字段 `delta`） |
-| `tool.started` | 工具调用开始（字段 `tool`、`preview`） |
-| `tool.completed` | 工具调用完成（字段 `tool`、`duration`） |
-| `run.completed` | Run 完成（字段 `output`、`usage`） |
-| `run.failed` | Run 失败（字段 `error`） |
+| Event | Description |
+|-------|-------------|
+| `run.started` | Run started |
+| `message.delta` | Message content fragment (field `delta`) |
+| `tool.started` | Tool call started (fields `tool`, `preview`) |
+| `tool.completed` | Tool call completed (fields `tool`, `duration`) |
+| `run.completed` | Run completed (fields `output`, `usage`) |
+| `run.failed` | Run failed (field `error`) |
 
-示例：
+Example:
 ```
-data: {"event":"message.delta","run_id":"run_xxx","delta":"你好","timestamp":...}
+data: {"event":"message.delta","run_id":"run_xxx","delta":"Hello","timestamp":...}
 data: {"event":"tool.started","run_id":"run_xxx","tool":"browser_navigate","preview":"https://...","timestamp":...}
 data: {"event":"tool.completed","run_id":"run_xxx","tool":"browser_navigate","duration":3.8,"timestamp":...}
-data: {"event":"run.completed","run_id":"run_xxx","output":"完整回复","usage":{"input_tokens":100,"output_tokens":50,"total_tokens":150}}
+data: {"event":"run.completed","run_id":"run_xxx","output":"Full response","usage":{"input_tokens":100,"output_tokens":50,"total_tokens":150}}
 ```
 
 ---
 
-### 8. 定时任务
+### 8. Scheduled Jobs
 
-#### 列出任务
+#### List Jobs
 
 **GET** `/api/jobs?include_disabled=true`
 
@@ -321,7 +322,7 @@ data: {"event":"run.completed","run_id":"run_xxx","output":"完整回复","usage
   "jobs": [
     {
       "job_id": "61a5eb0baeb9",
-      "name": "任务名",
+      "name": "Job name",
       "schedule": "0 9 * * *",
       "repeat": "forever",
       "deliver": "origin",
@@ -337,32 +338,32 @@ data: {"event":"run.completed","run_id":"run_xxx","output":"完整回复","usage
 }
 ```
 
-#### 创建任务
+#### Create Job
 
 **POST** `/api/jobs`
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| name | string | Y | 任务名称（最大 200 字符） |
-| schedule | string | Y | Cron 表达式 |
-| prompt | string | N | 任务 prompt |
-| deliver | string | N | 投递目标（origin / local / telegram / discord） |
-| skills | array | N | skill 名称数组 |
-| repeat | integer | N | 重复次数，不传表示永久 |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| name | string | Y | Job name (max 200 characters) |
+| schedule | string | Y | Cron expression |
+| prompt | string | N | Job prompt |
+| deliver | string | N | Delivery target (origin / local / telegram / discord) |
+| skills | array | N | Skill name array |
+| repeat | integer | N | Repeat count, omit for indefinite |
 
-响应包裹在 `{"job": {...}}` 中。
+Response is wrapped in `{"job": {...}}`.
 
-#### 查看任务详情
+#### Get Job Detail
 
 **GET** `/api/jobs/{job_id}`
 
-#### 更新任务
+#### Update Job
 
 **PATCH** `/api/jobs/{job_id}`
 
-可更新字段：`name`、`schedule`、`prompt`、`deliver`、`skills`、`repeat`、`enabled`
+Updatable fields: `name`, `schedule`, `prompt`, `deliver`, `skills`, `repeat`, `enabled`
 
-#### 删除任务
+#### Delete Job
 
 **DELETE** `/api/jobs/{job_id}`
 
@@ -370,7 +371,7 @@ data: {"event":"run.completed","run_id":"run_xxx","output":"完整回复","usage
 {"ok": true}
 ```
 
-#### 暂停任务
+#### Pause Job
 
 **POST** `/api/jobs/{job_id}/pause`
 
@@ -378,7 +379,7 @@ data: {"event":"run.completed","run_id":"run_xxx","output":"完整回复","usage
 {"job": {"job_id": "xxx", "enabled": false, "state": "paused", ...}}
 ```
 
-#### 恢复任务
+#### Resume Job
 
 **POST** `/api/jobs/{job_id}/resume`
 
@@ -386,7 +387,7 @@ data: {"event":"run.completed","run_id":"run_xxx","output":"完整回复","usage
 {"job": {"job_id": "xxx", "enabled": true, "state": "scheduled", ...}}
 ```
 
-#### 立即触发任务
+#### Trigger Job Now
 
 **POST** `/api/jobs/{job_id}/run`
 
@@ -396,39 +397,43 @@ data: {"event":"run.completed","run_id":"run_xxx","output":"完整回复","usage
 
 ---
 
-## 快速测试
+## Quick Test
 
 ```bash
-# 健康检查
+# Health check
 curl http://127.0.0.1:8642/health
 
-# 模型列表
+# Model list
 curl http://127.0.0.1:8642/v1/models
 
 # Chat Completions
 curl -X POST http://127.0.0.1:8642/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -d '{"messages":[{"role":"user","content":"你好"}]}'
+  -d '{"messages":[{"role":"user","content":"Hello"}]}'
 
-# 启动异步 Run
+# Start async Run
 curl -X POST http://127.0.0.1:8642/v1/runs \
   -H "Content-Type: application/json" \
-  -d '{"input":"你好"}'
+  -d '{"input":"Hello"}'
 
-# 监听 Run 事件流
+# Listen to Run event stream
 curl http://127.0.0.1:8642/v1/runs/{run_id}/events
 
-# 列出任务（含已暂停）
+# List jobs (including disabled)
 curl "http://127.0.0.1:8642/api/jobs?include_disabled=true"
 
-# 创建任务
+# Create job
 curl -X POST http://127.0.0.1:8642/api/jobs \
   -H "Content-Type: application/json" \
-  -d '{"name":"测试任务","schedule":"0 9 * * *","prompt":"执行测试"}'
+  -d '{"name":"Test Job","schedule":"0 9 * * *","prompt":"Run test"}'
 
-# 暂停 / 恢复 / 触发 / 删除
+# Pause / Resume / Trigger / Delete
 curl -X POST http://127.0.0.1:8642/api/jobs/{job_id}/pause
 curl -X POST http://127.0.0.1:8642/api/jobs/{job_id}/resume
 curl -X POST http://127.0.0.1:8642/api/jobs/{job_id}/run
 curl -X DELETE http://127.0.0.1:8642/api/jobs/{job_id}
 ```
+
+## License
+
+[MIT](./LICENSE)

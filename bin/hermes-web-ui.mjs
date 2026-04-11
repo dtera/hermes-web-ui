@@ -2,12 +2,15 @@
 import { createServer as createViteServer } from 'http'
 import { resolve, dirname, join } from 'path'
 import { fileURLToPath } from 'url'
-import { readFile, stat, readdir } from 'fs/promises'
+import { readFile, stat, readdir, writeFile, mkdir } from 'fs/promises'
+import { tmpdir } from 'os'
+import { randomBytes } from 'crypto'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const distDir = resolve(__dirname, '..', 'dist')
 const API_TARGET = 'http://127.0.0.1:8642'
 const DEFAULT_PORT = 8648
+const UPLOAD_DIR = join(tmpdir(), 'hermes-uploads')
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -24,6 +27,10 @@ const MIME_TYPES = {
 function getMimeType(filePath) {
   const ext = filePath.substring(filePath.lastIndexOf('.'))
   return MIME_TYPES[ext] || 'application/octet-stream'
+}
+
+async function ensureUploadDir() {
+  await mkdir(UPLOAD_DIR, { recursive: true })
 }
 
 async function serveStatic(reqPath, res) {
@@ -47,6 +54,57 @@ async function serveStatic(reqPath, res) {
       res.writeHead(404, { 'Content-Type': 'text/plain' })
       res.end('Not Found')
     }
+  }
+}
+
+async function handleUpload(req, res) {
+  if (req.method !== 'POST') {
+    res.writeHead(405, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ error: 'Method not allowed' }))
+    return
+  }
+
+  const contentType = req.headers['content-type'] || ''
+  if (!contentType.startsWith('multipart/form-data')) {
+    res.writeHead(400, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ error: 'Expected multipart/form-data' }))
+    return
+  }
+
+  try {
+    await ensureUploadDir()
+    const chunks = []
+    for await (const chunk of req) chunks.push(chunk)
+    const body = Buffer.concat(chunks).toString()
+
+    const boundary = '--' + contentType.split('boundary=')[1]
+    const parts = body.split(boundary).slice(1, -1)
+
+    const results = []
+    for (const part of parts) {
+      const headerEnd = part.indexOf('\r\n\r\n')
+      if (headerEnd === -1) continue
+      const header = part.substring(0, headerEnd)
+      const data = part.substring(headerEnd + 4, part.length - 2)
+
+      const nameMatch = header.match(/name="([^"]+)"/)
+      const filenameMatch = header.match(/filename="([^"]+)"/)
+      if (!nameMatch || !filenameMatch) continue
+
+      const filename = filenameMatch[1]
+      const ext = filename.includes('.') ? '.' + filename.split('.').pop() : ''
+      const savedName = randomBytes(8).toString('hex') + ext
+      const savedPath = join(UPLOAD_DIR, savedName)
+
+      await writeFile(savedPath, Buffer.from(data, 'binary'))
+      results.push({ name: filename, path: savedPath })
+    }
+
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ files: results }))
+  } catch (err) {
+    res.writeHead(500, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ error: err.message }))
   }
 }
 
@@ -115,7 +173,9 @@ const port = parseInt(process.argv[2] && !isNaN(process.argv[2]) ? process.argv[
 createViteServer(async (req, res) => {
   const reqPath = req.url.split('?')[0]
 
-  if (reqPath.startsWith('/api/') || reqPath.startsWith('/v1/') || reqPath === '/health' || reqPath.startsWith('/health')) {
+  if (reqPath === '/__upload') {
+    await handleUpload(req, res)
+  } else if (reqPath.startsWith('/api/') || reqPath.startsWith('/v1/') || reqPath === '/health' || reqPath.startsWith('/health')) {
     await proxyRequest(req, res, reqPath)
   } else {
     await serveStatic(reqPath, res)
